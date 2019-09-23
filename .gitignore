@@ -1,0 +1,17 @@
+/bin/
+/build/
+.settings/
+.gradle/*
+.project/
+.classpath/
+/report/
+.idea/
+.classpath
+/target/
+/test-output/
+*.iml
+/logs/
+/AutomationReport/
+/src/resources/downloads/
+automation.sh
+README.md

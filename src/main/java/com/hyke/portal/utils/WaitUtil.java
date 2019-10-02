@@ -15,7 +15,7 @@ public class WaitUtil {
     private Logger log = Logger.getLogger(WaitUtil.class);
     private int timeoutPageLoad;
 
-    WaitUtil(WebDriver driver) {
+    public WaitUtil(WebDriver driver) {
         this.driver = driver;
         driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
     }

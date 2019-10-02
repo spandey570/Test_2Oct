@@ -35,16 +35,17 @@ public class UIUtil {
     private WebDriverWait wait;
     private JavascriptExecutor executor;
     private RandomUtil randomUtil;
-    private VerifyUtils verifyUtils;
+    private VerifyUtil verifyUtils;
     private WaitUtil waitUtil;
     private ActionsUtil actionsUtil;
     private EmailUtil emailUtil;
+    public String screenshotPath= System.getProperty("user.dir") + File.separator +"screenshots";
 
     public UIUtil(WebDriver driver, ExtentTest testReport) {
         this.driver = driver;
         this.testReport = testReport;
         actionsUtil = new ActionsUtil(driver);
-        verifyUtils = new VerifyUtils(driver, testReport);
+        verifyUtils = new VerifyUtil(driver, testReport);
         waitUtil = new WaitUtil(driver);
         driver.manage().timeouts().implicitlyWait(20, TimeUnit.SECONDS);
         randomUtil = new RandomUtil();
@@ -76,7 +77,7 @@ public class UIUtil {
         return waitUtil;
     }
 
-    public VerifyUtils getVerifyUtils() {
+    public VerifyUtil getVerifyUtils() {
         return verifyUtils;
     }
 
@@ -1024,8 +1025,8 @@ public class UIUtil {
 
         try {
             File src = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-            FileUtils.copyFile(src, new File(BaseUtil.reportFolderPath + File.separator + screenshotName));
-            log.info("Screenshot " + screenshotName + " taken at " + BaseUtil.reportFolderPath);
+            FileUtils.copyFile(src, new File(screenshotPath+File.separator+ screenshotName));
+            log.info("Screenshot " + screenshotName + " taken at " + screenshotPath);
         } catch (IOException e) {
             log.error("Fail to take screenshot");
         }

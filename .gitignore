@@ -10,8 +10,10 @@
 /target/
 /test-output/
 *.iml
-/logs/
-/AutomationReport/
+logs/
+AutomationReport/
 /src/resources/downloads/
 automation.sh
 README.md
+screenshots/
+/phantomjsdriver.log

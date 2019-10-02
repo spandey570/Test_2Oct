@@ -3,15 +3,12 @@ package com.hyke.portal.utils;
 import com.relevantcodes.extentreports.ExtentReports;
 import com.relevantcodes.extentreports.ExtentTest;
 import com.relevantcodes.extentreports.LogStatus;
-import com.ttn.framework.utils.FileOperation;
-import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.firefox.FirefoxProfile;
 import org.openqa.selenium.phantomjs.PhantomJSDriver;
 import org.openqa.selenium.phantomjs.PhantomJSDriverService;
 import org.openqa.selenium.remote.DesiredCapabilities;
@@ -33,24 +30,20 @@ public class BaseUtil {
     public static String url;
     public static String environment;
     public static String reportFolderPath;
-    public static String fileDownloadPath;
     protected static ExtentReports extent;
     static String os;
     static File directory = new File(".");
     protected Properties config = initPropFromFile("/src/main/test/com/hyke/portal/resources/config.properties");
     protected Properties cData = getTestData("commonData.properties");
-    protected Properties region;
-    protected String regionName;
+    protected Properties country;
+    protected String countryName;
     protected String browser;
-    protected FileOperation fileOperation;
     protected WebDriver driver;
     protected ExtentTest testReport;
     protected UIUtil util;
 
+    String usrDirectory = System.getProperty("user.dir");
 
-    //credential variables test data
-    protected String username = "username";
-    protected String password = "password";
 
     public static Properties initPropFromFile(String filename) {
         Properties temp = new Properties();
@@ -82,11 +75,20 @@ public class BaseUtil {
 
     @BeforeSuite
     public void configure() {
-        String extentConfigPath, reportPath;
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss")
-                .format(Calendar.getInstance().getTime());
 
-        PropertyConfigurator.configure("src/main/test/com/hyke/portal/resources/log4j.properties");
+        //Extent Report Setup in BaseLib
+        extent = new ExtentReports(usrDirectory + File.separator + "report" + File.separator + "AutomationReport.html", true);
+        extent.addSystemInfo("HostName", "Srikant");
+        extent.addSystemInfo("Environment", "Web");
+        extent.loadConfig(new File(usrDirectory + File.separator +
+                "src" + File.separator + "main" + File.separator + "test" + File.separator + "com" +
+                File.separator + "hyke" + File.separator +
+                "portal" + File.separator + "resources" + File.separator + "extent-config.xml"));
+
+
+        PropertyConfigurator.configure("src" + File.separator + "main" + File.separator + "test" + File.separator + "com" +
+                File.separator + "hyke" + File.separator +
+                "portal" + File.separator + "resources" + File.separator + "log4j.properties");
 
         os = (System.getProperty("os") != null) ?
                 System.getProperty("os") : config.getProperty("os");
@@ -101,45 +103,19 @@ public class BaseUtil {
         url = getEnvironmentURL(environment);
         log.info("URL set to: " + url);
 
-        try {
-            fileDownloadPath = directory.getCanonicalPath() + File.separator + "src" + File.separator + "main" +
-                    File.separator + "resources" + File.separator + "downloads";
-            FileUtils.forceMkdir(new File(fileDownloadPath));
-            fileOperation = new FileOperation(fileDownloadPath);
-            log.info("File download path: " + fileDownloadPath);
-
-            reportFolderPath = directory.getCanonicalPath() + File.separator +
-                    "AutomationReport" + File.separator + "TestRun_" + timeStamp;
-            FileUtils.forceMkdir(new File(reportFolderPath));
-            reportPath = reportFolderPath + File.separator + "AutomationReport.html";
-            log.info("Extent report folder path: " + reportPath);
-
-            extentConfigPath = directory.getCanonicalPath() + File.separator + "src" + File.separator + "main" +
-                    File.separator + "test" +
-                    File.separator+ "com" +
-                    File.separator+ "hyke" +
-                    File.separator+"portal" +
-                    File.separator+"resources" + File.separator + "extent-config.xml";
-            log.info("Extent report config path: " + extentConfigPath);
-
-            extent = new ExtentReports(reportPath, false);
-            extent.loadConfig(new File(extentConfigPath));
-        } catch (IOException e) {
-            log.error("IO exception occur: " + e.getMessage());
-        }
     }
 
-    @Parameters({"region"})
+    @Parameters({"country"})
     @BeforeClass
-    protected void setRegionName(@Optional String regionXML) {
+    protected void setCountryName(@Optional String regionXML) {
         if (regionXML == null) {
-            regionName = (System.getProperty("region") != null ?
-                    System.getProperty("region") : config.getProperty("region")).toUpperCase();
+            countryName = (System.getProperty("country") != null ?
+                    System.getProperty("country") : config.getProperty("country")).toUpperCase();
         } else {
-            regionName = regionXML;
+            countryName = regionXML;
         }
-        region = getTestData(regionName + ".properties");
-        log.info("Region set to: " + regionName + " for class " + this.getClass().getSimpleName());
+        country = getTestData(countryName + ".properties");
+        log.info("Country set to: " + countryName + " for class " + this.getClass().getSimpleName());
     }
 
     @Parameters({"browser"})
@@ -163,9 +139,9 @@ public class BaseUtil {
         String packageName, testName;
 
         packageName = this.getClass().getPackage().getName();
-        testName = this.getClass().getSimpleName() + " : " + method.getName() + " : " + regionName;
+        testName = this.getClass().getSimpleName() + " : " + method.getName() + " : " + countryName;
         testReport = extent.startTest(testName, method.getAnnotation(Test.class).description())
-                .assignCategory(regionName, packageName.substring(packageName.lastIndexOf(".") + 1));
+                .assignCategory(countryName, packageName.substring(packageName.lastIndexOf(".") + 1));
 
         log.info("Extent report logging started for " + testName);
         System.out.println(">>>>> Execution started: " + testName);
@@ -173,8 +149,8 @@ public class BaseUtil {
     }
 
     @AfterMethod
-    protected void reportFailure(ITestResult result,Method method) {
-        String testName = this.getClass().getSimpleName() + " : " + method.getName() + " : " + regionName;
+    protected void reportFailure(ITestResult result, Method method) {
+        String testName = this.getClass().getSimpleName() + " : " + method.getName() + " : " + countryName;
         if (result.getStatus() == ITestResult.FAILURE) {
             try {
                 String screenshotName = util.takeScreenShot();
@@ -201,37 +177,23 @@ public class BaseUtil {
     protected void endReporting() {
         extent.flush();
         extent.close();
-
-        try {
-            //copy the extend reports to new folder dedicated for Jenkins integration
-            File srcDir = new File(reportFolderPath);
-            File destDir = new File(directory.getCanonicalPath() + File.separator +
-                    "AutomationReport" + File.separator + "LatestRun");
-            FileUtils.forceMkdir(destDir);
-            FileUtils.cleanDirectory(destDir);
-            FileUtils.copyDirectory(srcDir, destDir);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
-    protected String initData(String regionData) {
-        return region.getProperty(regionData);
+    protected String initData(String countryData) {
+        return country.getProperty(countryData);
     }
 
     private String getEnvironmentURL(String environment) {
         switch (environment.toUpperCase()) {
-            case "IDT":
-                return "http://vps-idt.westcon.com/";
-            case "IAT":
-                return "http://vps-iat.westcon.com/";
-            case "AUTO":
-                return "https://www.bfl-web-client.qa3.tothenew.net/en-ae/login";
-            case "RUN":
-                return "http://vps-run.westcon.com/";
+
+            case "DEV":
+                return "https://www.google.com/";
+
+            case "QA":
+                return "https://www.google.com/";
+
             case "UAT":
-                return "http://vps-uat.westcon.com/";
+                return "https://www.google.com/";
 
             default:
                 return config.getProperty("url");
@@ -264,28 +226,24 @@ public class BaseUtil {
                         System.setProperty("webdriver.chrome.driver", driversPath + "chromedriver_mac");
                         break;
                 }
-                return new ChromeDriver(setChromeCaps("chrome"));
+                return new ChromeDriver();
 
-            case "CHROMEHEADLESS":
-                log.info("Initialize chrome headless driver on OS: " + os);
-                switch (os.toUpperCase()) {
-                    case "LINUX64":
-                        System.setProperty("webdriver.chrome.driver", driversPath + "chromedriver");
-                        break;
-                    case "WIN":
-                        System.setProperty("webdriver.chrome.driver", driversPath + "chromedriver.exe");
-                        break;
-                    case "MAC":
-                        System.setProperty("webdriver.chrome.driver", driversPath + "chromedriver_mac");
-                        break;
-                }
-                return new ChromeDriver(setChromeCaps("chromeheadless"));
 
             case "FIREFOX":
-                log.info("Initialize firefox driver on OS: " + os);
-                DesiredCapabilities capabilities = DesiredCapabilities.firefox();
-                capabilities.setJavascriptEnabled(true);
-                return new FirefoxDriver(setFirefoxProfile());
+                log.info("Initialize chrome driver on OS: " + os);
+                switch (os.toUpperCase()) {
+                    case "LINUX64":
+                        System.setProperty("webdriver.gecko.driver", driversPath + "geckodriver");
+                        break;
+                    case "WIN":
+                        System.setProperty("webdriver.gecko.driver", driversPath + "geckodriver.exe");
+                        break;
+                    case "MAC":
+                        System.setProperty("webdriver.gecko.driver", driversPath + "geckodriver_mac");
+                        break;
+                }
+                return new FirefoxDriver();
+
 
             case "HEADLESS":
                 log.info("Initialize phantom headless driver on OS: " + os);
@@ -318,42 +276,7 @@ public class BaseUtil {
             default:
                 log.info("Unable to find browser. Initializing chromedriver on OS: Linux");
                 System.setProperty("webdriver.chrome.driver", driversPath + "chromedriver");
-                return new ChromeDriver(setChromeCaps("chrome"));
+                return new ChromeDriver();
         }
-    }
-
-    private FirefoxProfile setFirefoxProfile() {
-        FirefoxProfile profile = new FirefoxProfile();
-        profile.setPreference("browser.download.folderList", 2);
-        profile.setPreference("browser.download.manager.showWhenStarting", false);
-        profile.setPreference("browser.download.dir", BaseUtil.fileDownloadPath);
-        profile.setPreference("browser.helperApps.neverAsk.saveToDisk",
-                "text/csv,application/x-msexcel,application/excel,application/x-excel,application/vnd.ms-excel," +
-                        "image/png,image/jpeg,text/html,text/plain,application/msword,application/xml");
-        return profile;
-    }
-
-    private DesiredCapabilities setChromeCaps(String browserType) {
-
-        HashMap<String, Object> chromePrefs = new HashMap<>();
-        chromePrefs.put("profile.default_content_settings.popups", 0);
-        chromePrefs.put("download.default_directory", BaseUtil.fileDownloadPath);
-        ChromeOptions options = new ChromeOptions();
-        HashMap<String, Object> chromeOptionsMap = new HashMap<>();
-        options.setExperimentalOption("prefs", chromePrefs);
-        options.addArguments("--test-type");
-        options.addArguments("--disable-extensions"); //to disable browser extension popup
-        if (browserType.equalsIgnoreCase("chromeheadless")) {
-
-            log.info("Running chrome in headless mode");
-            options.addArguments("headless");
-            options.addArguments("window-size=1200x600");
-
-        }
-        DesiredCapabilities cap = DesiredCapabilities.chrome();
-        cap.setCapability(ChromeOptions.CAPABILITY, chromeOptionsMap);
-        cap.setCapability(ChromeOptions.CAPABILITY, options);
-        return cap;
-
     }
 }
